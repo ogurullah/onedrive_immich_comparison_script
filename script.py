@@ -1,5 +1,6 @@
 import os
 import directories
+from pathlib import Path
 
 onedriveDir = directories.onedriveDir
 immichDir = directories.immichDir
@@ -21,9 +22,10 @@ def folders_match(folders1, folders2, matchingFolders):
                 matchingFolders.append((folder1, folder2))
     return matchingFolders
 
-def has_subfolders(folder):
-    if any(os.path.isdir(os.path.join(folder, subfolder)) for subfolder in os.listdir(folder)):
-         folder.append(folder)
+def collect_subfolders(folder):
+    folderPath = Path(folder)
+    subfolders = [item for item in folderPath.iterdir() if item.is_dir()]
+    return subfolders
 
 def remove_subfolders(folderList, subfolderList):
     for folder in folderList:
@@ -35,17 +37,18 @@ def remove_subfolders(folderList, subfolderList):
 onedriveFolderNames = collect_folders(onedriveDir, [])
 immichFolderNames = collect_folders(immichDir, [])
 
-print(onedriveFolderNames)
-print(immichFolderNames)
+onedriveYears = collect_subfolders(onedriveDir)
+immichYears = collect_subfolders(immichDir)
 
-#hasSubfoldersOnedrive = []
-#hasSubfoldersImmich = []
+onedriveMonths = []
+immichMonths = []
 
-#hasSubfoldersOnedrive = has_subfolders(onedriveFolderNames)
-#hasSubfoldersImmich = has_subfolders(immichFolderNames)
+for year in onedriveYears:
+     onedriveMonths.append(collect_subfolders(year))
 
-#remove_subfolders(onedriveFolderNames, hasSubfoldersOnedrive)
-#remove_subfolders(immichFolderNames, hasSubfoldersImmich)
+for year in immichYears:
+        immichMonths.append(collect_subfolders(year))
+
 
 #matchingFolders = []
 #matchingFolders = folders_match(onedriveFolderNames, immichFolderNames, matchingFolders)
