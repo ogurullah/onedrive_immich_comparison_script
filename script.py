@@ -15,23 +15,38 @@ def collect_folders(directory, folderNames):
     folderNames.sort()
     return folderNames
 
-def folders_match(folders1, folders2, matchingFolders):
+def collect_subfolders(folder):
+    folderPath = Path(folder)
+    subfolders = [item for item in folderPath.iterdir() if item.is_dir()]
+    return subfolders
+
+def collect_months(years):
+    months = []
+    for year in years:
+        months.extend(collect_subfolders(year))
+    months.sort()
+    return months
+
+def folders_match(folders1, folders2):
+    matchingFolders = []
     for folder1 in folders1:
         for folder2 in folders2:
             if os.path.basename(folder1) == os.path.basename(folder2):
                 matchingFolders.append((folder1, folder2))
     return matchingFolders
 
-def collect_subfolders(folder):
-    folderPath = Path(folder)
-    subfolders = [item for item in folderPath.iterdir() if item.is_dir()]
-    return subfolders
-
-def remove_subfolders(folderList, subfolderList):
-    for folder in folderList:
-        if any(os.path.commonpath([folder, subfolder]) == folder for subfolder in subfolderList):
-            folderList.remove(folder)
-
+def files_match(matchingFolders):
+    matchingFiles = []
+    for onedriveMonth, immichMonth in matchingFolders:
+        for root, dirs, files in os.walk(onedriveMonth):
+            for file in files:
+                for immichRoot, immichDirs, immichFiles in os.walk(immichMonth):
+                    if file in immichFiles:
+                        onedriveFilePath = os.path.join(root, file)
+                        immichFilePath = os.path.join(immichRoot, file)
+                        matchingFiles.append((onedriveFilePath, immichFilePath))
+    print(matchingFiles)
+    return matchingFiles
 # Script
 
 onedriveFolderNames = collect_folders(onedriveDir, [])
@@ -40,18 +55,12 @@ immichFolderNames = collect_folders(immichDir, [])
 onedriveYears = collect_subfolders(onedriveDir)
 immichYears = collect_subfolders(immichDir)
 
-onedriveMonths = []
-immichMonths = []
+onedriveMonths = collect_months(onedriveYears)
+immichMonths = collect_months(immichYears)
 
-for year in onedriveYears:
-     onedriveMonths.append(collect_subfolders(year))
+matchingFolders = folders_match(onedriveMonths, immichMonths)
 
-for year in immichYears:
-        immichMonths.append(collect_subfolders(year))
-
-
-#matchingFolders = []
-#matchingFolders = folders_match(onedriveFolderNames, immichFolderNames, matchingFolders)
+matchingFiles = files_match(matchingFolders)
 
 #for folderOnedrive, folderimmich in matchingFolders:
 #    for root, dirs, files in os.walk(folderOnedrive):
