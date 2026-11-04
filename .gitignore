@@ -1,0 +1,4 @@
+directories.py
+gpt.py
+__pycache__/
+*.py[cod]
