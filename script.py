@@ -54,8 +54,6 @@ def progress_bar(current, total, label="Processing"):
         print()
 
 
-# Functions
-
 def collect_folders(directory, folderNames):
     totalFolders = sum(
         len(dirs)
@@ -125,7 +123,6 @@ def folders_match(folders1, folders2):
 def files_match(matchingFolders):
     matchingFiles = []
 
-    # Count OneDrive files beforehand for accurate progress
     totalFiles = sum(
         len(files)
         for onedriveMonth, immichMonth in matchingFolders
@@ -198,7 +195,9 @@ def quarantine_matching_files(matchingFiles):
 
         progress_bar(current, totalFiles, "Quarantining files")
 
-    print(f"Copied {totalFiles} matching files to {quarantineDir}")
+    print(f"Moved {totalFiles} matching files to {quarantineDir}")
+
+    
 # Script
 
 onedriveFolderNames = collect_folders(onedriveDir, [])
