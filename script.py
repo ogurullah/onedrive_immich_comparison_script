@@ -1,9 +1,11 @@
 import os
 import directories
 from pathlib import Path
+import shutil
 
 onedriveDir = directories.onedriveDir
 immichDir = directories.immichDir
+sharedDir = directories.sharedDir
 
 # Functions
 
@@ -37,16 +39,59 @@ def folders_match(folders1, folders2):
 
 def files_match(matchingFolders):
     matchingFiles = []
+
     for onedriveMonth, immichMonth in matchingFolders:
+
+        immichFiles = {}
+
+        for root, dirs, files in os.walk(immichMonth):
+            for file in files:
+                normalizedName = file.casefold()
+
+                immichFilePath = os.path.join(root, file)
+
+                immichFiles.setdefault(normalizedName, []).append(immichFilePath)
+
         for root, dirs, files in os.walk(onedriveMonth):
             for file in files:
-                for immichRoot, immichDirs, immichFiles in os.walk(immichMonth):
-                    if file in immichFiles:
-                        onedriveFilePath = os.path.join(root, file)
-                        immichFilePath = os.path.join(immichRoot, file)
-                        matchingFiles.append((onedriveFilePath, immichFilePath))
-    print(matchingFiles)
+                normalizedName = file.casefold()
+
+                onedriveFilePath = os.path.join(root, file)
+
+                if normalizedName in immichFiles:
+                    for immichFilePath in immichFiles[normalizedName]:
+                        matchingFiles.append(
+                            (onedriveFilePath, immichFilePath)
+                        )
+
+    print(len(matchingFiles))
     return matchingFiles
+
+def quarantine_matching_files(matchingFiles):
+    onedriveRoot = Path(directories.onedriveDir)
+    quarantineDir = Path(directories.sharedDir) / "movedWithScript"
+
+    for onedriveFile, immichFile in matchingFiles:
+        source = Path(onedriveFile)
+
+        relativePath = source.relative_to(onedriveRoot)
+        destination = quarantineDir / relativePath
+
+        destination.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            shutil.copy2(source, destination)
+            print(f"Copied: {source}")
+
+        except OSError as error:
+            print(f"\nFAILED SOURCE: {source}")
+            print(f"FAILED DESTINATION: {destination}")
+            print(f"ERROR: {error}")
+            raise
+        
+        print(f"Copied: {onedriveFile}")
+
+    print(f"Copied {len(matchingFiles)} matching files to {quarantineDir}")
 # Script
 
 onedriveFolderNames = collect_folders(onedriveDir, [])
@@ -62,11 +107,4 @@ matchingFolders = folders_match(onedriveMonths, immichMonths)
 
 matchingFiles = files_match(matchingFolders)
 
-#for folderOnedrive, folderimmich in matchingFolders:
-#    for root, dirs, files in os.walk(folderOnedrive):
-#        for fileName in files:
-#            onedriveFilePath = os.path.join(root, fileName)
-#            immichFilePath = os.path.join(folderimmich, fileName)
-#
-#            if os.path.exists(immichFilePath):
-#                print(f"File already exists in Immich: {immichFilePath}")
+quarantine_matching_files(matchingFiles)
